@@ -15,6 +15,23 @@ from app.utils.logger import logger
 
 HCC_CSV_PATH = Path(__file__).parent.parent.parent / "data" / "HCC_relevant_codes.csv"
 
+_condition_extractor: ConditionExtractor | None = None
+_hcc_evaluator: HCCRelevanceEvaluator | None = None
+
+
+def _get_condition_extractor() -> ConditionExtractor:
+    global _condition_extractor
+    if _condition_extractor is None:
+        _condition_extractor = ConditionExtractor()
+    return _condition_extractor
+
+
+def _get_hcc_evaluator() -> HCCRelevanceEvaluator:
+    global _hcc_evaluator
+    if _hcc_evaluator is None:
+        _hcc_evaluator = HCCRelevanceEvaluator(HCC_CSV_PATH)
+    return _hcc_evaluator
+
 
 def input_handler_node(state: MedicoderState) -> Dict:
     """
@@ -44,7 +61,7 @@ def clinical_note_parser_node(state: MedicoderState) -> Dict:
 
 
 def condition_extractor_node(state: MedicoderState) -> Dict:
-    extractor = ConditionExtractor()
+    extractor = _get_condition_extractor()
 
     # Prefer the parsed assessment_plan section; fall back to the full note
     sections = state["parsed_sections"]
@@ -56,6 +73,6 @@ def condition_extractor_node(state: MedicoderState) -> Dict:
 
 
 def hcc_relevance_checker_node(state: MedicoderState) -> Dict:
-    evaluator = HCCRelevanceEvaluator(HCC_CSV_PATH)
+    evaluator = _get_hcc_evaluator()
     results = evaluator.evaluate(state["conditions"])
     return {"results": results}

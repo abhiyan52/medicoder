@@ -19,6 +19,10 @@ def run_batch() -> None:
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    if not NOTES_DIR.is_dir():
+        logger.warning("Notes directory not found", path=str(NOTES_DIR))
+        return
+
     note_files = sorted(NOTES_DIR.iterdir())
     if not note_files:
         logger.warning("No note files found", path=str(NOTES_DIR))

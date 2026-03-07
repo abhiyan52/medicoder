@@ -23,12 +23,16 @@ class HCCRelevanceEvaluator:
         results = []
 
         for c in conditions:
-
-            code = normalize_icd(c["code"])
+            raw_code = c.get("code")
+            if raw_code:
+                code = normalize_icd(raw_code)
+                hcc_relevant = code in self.hcc_codes
+            else:
+                hcc_relevant = False
 
             results.append({
                 **c,
-                "hcc_relevant": code in self.hcc_codes
+                "hcc_relevant": hcc_relevant
             })
 
         return results 

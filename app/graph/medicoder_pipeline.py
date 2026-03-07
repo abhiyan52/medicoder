@@ -3,7 +3,7 @@
     Description: Workflow using langgraph
 """
 
-from langgraph.graph import START, StateGraph
+from langgraph.graph import END, START, StateGraph
 from app.graph.states import MedicoderState
 from app.graph.nodes import (
     input_handler_node,
@@ -25,6 +25,7 @@ def _build_graph():
     graph.add_edge("input_handler", "parser")
     graph.add_edge("parser", "extractor")
     graph.add_edge("extractor", "evaluator")
+    graph.add_edge("evaluator", END)
 
     return graph
 
