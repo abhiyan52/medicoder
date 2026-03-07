@@ -1,5 +1,7 @@
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from app.graph.medicoder_pipeline import _build_graph, run
 
 def test_build_graph():
@@ -30,7 +32,8 @@ def test_run_pipeline(mock_invoke):
 def test_integration_pipeline_real_llm():
     """
     Integration test that runs the entire pipeline end-to-end with real LLM inference.
-    To run this test standalone: poetry run pytest tests/test_pipeline.py::test_integration_pipeline_real_llm
+    To run this test standalone:
+    RUN_INTEGRATION_TESTS=1 poetry run pytest tests/test_pipeline.py::test_integration_pipeline_real_llm
     """
     simple_note = "Assessment / Plan: 1. Essential hypertension (I10). 2. Type 2 diabetes mellitus (E11.9)."
     

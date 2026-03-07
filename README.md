@@ -29,8 +29,10 @@ input_handler → parser → extractor → evaluator
 |---|---|---|
 | `input_handler` | — | Resolves `raw_input` to note text; accepts a file path or raw text |
 | `parser` | `RegexBasedParser` | Extracts the **Assessment / Plan** section using regex patterns; falls back to the full note if no section is found |
-| `extractor` | `ConditionExtractor` | Calls **Gemini 2.0 Flash** via Vertex AI with a versioned prompt to extract a list of `{ condition, code }` pairs |
+| `extractor` | `ConditionExtractor` | Calls **Gemini 2.5 Flash** via Vertex AI with a versioned prompt to extract a list of `{ condition, code }` pairs |
 | `evaluator` | `HCCRelevanceEvaluator` | Normalises each ICD-10 code and checks it against a reference CSV of tracked HCC codes; appends `hcc_relevant: true/false` to each condition |
+
+Note: the original assignment asked for Gemini 1.5 Flash, but this project defaults to `gemini-2.5-flash` because Gemini 1.5 Flash is no longer available in the Vertex AI environment used for this submission.
 
 ### State
 

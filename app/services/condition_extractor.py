@@ -13,6 +13,10 @@ from app.utils.logger import logger
 from app.utils.model_config_utils import ModelConfig, get_default_model_config
 from app.utils.prompt_loader import get_prompt
 
+class ExtractionError(Exception):
+    """Raised when condition extraction fails."""
+    pass
+
 # ------------------------------------
 # Output Schema
 # ------------------------------------
@@ -74,7 +78,7 @@ class ConditionExtractor:
         prompt_text = get_prompt(self.PROMPT_NAME, self.PROMPT_VERSION)
         if not prompt_text:
             logger.error("Failed to load prompt", prompt_name=self.PROMPT_NAME)
-            return []
+            raise ExtractionError(f"Failed to load prompt: {self.PROMPT_NAME}")
 
         logger.info("Running condition extraction", prompt_name=self.PROMPT_NAME)
 
@@ -84,12 +88,12 @@ class ConditionExtractor:
         except Exception as e:
             logger.error("chain.invoke failed during condition extraction",
                          prompt_name=self.PROMPT_NAME, error=str(e), exc_info=True)
-            return []
+            raise ExtractionError(f"Condition extraction chain failed: {e}") from e
 
         if not isinstance(raw_result, list):
             logger.error("chain.invoke returned unexpected type; expected list of dicts from JsonOutputParser",
                          actual_type=type(raw_result).__name__, raw_result=raw_result)
-            return []
+            raise ExtractionError(f"Unexpected output type from model: {type(raw_result).__name__}")
 
         # Build ExtractedCondition objects, skipping malformed or incomplete items
         conditions = []
