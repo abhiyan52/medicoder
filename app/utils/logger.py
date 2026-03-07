@@ -1,6 +1,8 @@
 import logging
-import structlog
 import sys
+
+import structlog
+
 
 def setup_logging(is_dev_mode: bool = True):
     """
@@ -36,6 +38,7 @@ def setup_logging(is_dev_mode: bool = True):
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
+
 
 # Run the setup once when the module is imported
 setup_logging()

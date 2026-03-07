@@ -3,44 +3,47 @@ author: @abhiyanhaze
 description: Service / Tool to run the inference and get back the results.
 """
 
-from typing import Optional, List
-from pydantic import BaseModel, Field
-from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import PromptTemplate
+from langchain_google_vertexai import ChatVertexAI
+from pydantic import BaseModel, Field
 
-from app.utils.logger import logger
 from app.config import settings
+from app.utils.logger import logger
 from app.utils.model_config_utils import ModelConfig, get_default_model_config
 from app.utils.prompt_loader import get_prompt
-
 
 # ------------------------------------
 # Output Schema
 # ------------------------------------
 
+
 class ExtractedCondition(BaseModel):
     condition: str = Field(description="The name of the diagnosed medical condition")
     code: str = Field(description="The associated ICD-10-CM code")
 
+
 class ExtractionResult(BaseModel):
-    conditions: List[ExtractedCondition] = Field(default_factory=list)
+    conditions: list[ExtractedCondition] = Field(default_factory=list)
 
 
 # ------------------------------------
 # Service
 # ------------------------------------
 
+
 class ConditionExtractor:
     PROMPT_NAME = "clinical_note_extraction"
-    PROMPT_VERSION = None # This will take the latest version by default
+    PROMPT_VERSION = None  # This will take the latest version by default
 
-    def __init__(self, config: Optional[ModelConfig] = None) -> None:
+    def __init__(self, config: ModelConfig | None = None) -> None:
         self.config = config or get_default_model_config()
 
-        logger.info("Initializing ConditionExtractor",
-                    model=self.config.model_name,
-                    project=settings.PROJECT_ID)
+        logger.info(
+            "Initializing ConditionExtractor",
+            model=self.config.model_name,
+            project=settings.PROJECT_ID,
+        )
 
         self.model = ChatVertexAI(
             model_name=self.config.model_name,
@@ -63,7 +66,7 @@ class ConditionExtractor:
         )
         return prompt | self.model | self.parser
 
-    def extract(self, note: str) -> List[ExtractedCondition]:
+    def extract(self, note: str) -> list[ExtractedCondition]:
         """
         Extract conditions from the given clinical note.
         Returns a list of ExtractedCondition objects.
