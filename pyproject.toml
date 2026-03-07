@@ -1,0 +1,33 @@
+[project]
+name = "medicoder"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Abhiyan Timilsina",email = "abhiyantimilsina@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "langgraph (>=1.0.10,<2.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "langsmith (>=0.7.14,<0.8.0)",
+    "polar (>=0.0.127,<0.0.128)",
+    "langchain (>=1.2.10,<2.0.0)",
+    "langchain-core (>=1.2.17,<2.0.0)",
+    "google-cloud-aiplatform (>=1.140.0,<2.0.0)",
+    "pydantic (>=2.12.5,<3.0.0)",
+    "structlog (>=25.5.0,<26.0.0)",
+    "langgraph-cli (>=0.4.14,<0.5.0)"
+]
+
+[tool.poetry]
+packages = [{include = "medicoder", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)"
+]
