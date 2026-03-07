@@ -32,6 +32,9 @@ def _build_graph():
 
 _graph = _build_graph().compile()
 
+# Public handle used by `langgraph dev` (referenced in langgraph.json)
+graph = _graph
+
 
 def run(raw_input: str) -> list[dict]:
     """

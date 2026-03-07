@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "medicoder": "./app/graph/medicoder_pipeline.py:graph"
+  },
+  "env": ".env"
+}
