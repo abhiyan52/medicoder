@@ -7,15 +7,18 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from app.config import settings
 from app.utils.logger import logger
 from app.utils.model_config_utils import ModelConfig, get_default_model_config
 from app.utils.prompt_loader import get_prompt
 
+
 class ExtractionError(Exception):
     """Raised when condition extraction fails."""
     pass
+
 
 # ------------------------------------
 # Output Schema
@@ -25,10 +28,6 @@ class ExtractionError(Exception):
 class ExtractedCondition(BaseModel):
     condition: str = Field(description="The name of the diagnosed medical condition")
     code: str = Field(description="The associated ICD-10-CM code")
-
-
-class ExtractionResult(BaseModel):
-    conditions: list[ExtractedCondition] = Field(default_factory=list)
 
 
 # ------------------------------------
@@ -52,13 +51,18 @@ class ConditionExtractor:
         self.model = ChatGoogleGenerativeAI(
             model=self.config.model_name,
             temperature=self.config.temperature,
-            top_p=self.config.top_p,
             top_k=self.config.top_k,
             project=settings.PROJECT_ID,
             location=settings.LOCATION,
         )
 
         self.parser = JsonOutputParser(pydantic_object=ExtractedCondition)
+
+        # Eagerly load prompt and build chain once at init time
+        prompt_text = get_prompt(self.PROMPT_NAME, self.PROMPT_VERSION)
+        if not prompt_text:
+            raise ExtractionError(f"Failed to load prompt: {self.PROMPT_NAME}")
+        self._chain = self._build_chain(prompt_text)
 
     def _build_chain(self, prompt_text: str):
         """
@@ -70,21 +74,24 @@ class ConditionExtractor:
         )
         return prompt | self.model | self.parser
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(Exception),
+        reraise=True,
+    )
+    def _invoke(self, note: str):
+        return self._chain.invoke({"clinical_text": note})
+
     def extract(self, note: str) -> list[ExtractedCondition]:
         """
         Extract conditions from the given clinical note.
         Returns a list of ExtractedCondition objects.
         """
-        prompt_text = get_prompt(self.PROMPT_NAME, self.PROMPT_VERSION)
-        if not prompt_text:
-            logger.error("Failed to load prompt", prompt_name=self.PROMPT_NAME)
-            raise ExtractionError(f"Failed to load prompt: {self.PROMPT_NAME}")
-
         logger.info("Running condition extraction", prompt_name=self.PROMPT_NAME)
 
-        chain = self._build_chain(prompt_text)
         try:
-            raw_result = chain.invoke({"clinical_text": note})
+            raw_result = self._invoke(note)
         except Exception as e:
             logger.error("chain.invoke failed during condition extraction",
                          prompt_name=self.PROMPT_NAME, error=str(e), exc_info=True)

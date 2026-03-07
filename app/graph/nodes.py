@@ -3,6 +3,7 @@
     description: Nodes for langgraph
 """
 
+import threading
 from pathlib import Path
 from typing import Dict
 
@@ -15,21 +16,39 @@ from app.utils.logger import logger
 
 HCC_CSV_PATH = Path(__file__).parent.parent.parent / "data" / "HCC_relevant_codes.csv"
 
+_parser = None
 _condition_extractor: ConditionExtractor | None = None
 _hcc_evaluator: HCCRelevanceEvaluator | None = None
+
+_parser_lock = threading.Lock()
+_extractor_lock = threading.Lock()
+_evaluator_lock = threading.Lock()
+
+
+def _get_parser():
+    global _parser
+    if _parser is None:
+        with _parser_lock:
+            if _parser is None:
+                _parser = build_default_clinical_parser()
+    return _parser
 
 
 def _get_condition_extractor() -> ConditionExtractor:
     global _condition_extractor
     if _condition_extractor is None:
-        _condition_extractor = ConditionExtractor()
+        with _extractor_lock:
+            if _condition_extractor is None:
+                _condition_extractor = ConditionExtractor()
     return _condition_extractor
 
 
 def _get_hcc_evaluator() -> HCCRelevanceEvaluator:
     global _hcc_evaluator
     if _hcc_evaluator is None:
-        _hcc_evaluator = HCCRelevanceEvaluator(HCC_CSV_PATH)
+        with _evaluator_lock:
+            if _hcc_evaluator is None:
+                _hcc_evaluator = HCCRelevanceEvaluator(HCC_CSV_PATH)
     return _hcc_evaluator
 
 
@@ -54,7 +73,7 @@ def input_handler_node(state: MedicoderState) -> Dict:
 
 
 def clinical_note_parser_node(state: MedicoderState) -> Dict:
-    parser = build_default_clinical_parser()
+    parser = _get_parser()
     parsed_sections = parser.parse(state["clinical_note"])
     logger.info("Parsed clinical note", sections=list(parsed_sections.keys()))
     return {"parsed_sections": parsed_sections}
@@ -66,7 +85,7 @@ def condition_extractor_node(state: MedicoderState) -> Dict:
     # Prefer the parsed assessment_plan section; fall back to the full note
     sections = state["parsed_sections"]
     assessment_text = " ".join(sections.get("assessment_plan", []))
-    
+
     if assessment_text:
         logger.info("Using parsed assessment_plan section for extraction")
         note_text = assessment_text

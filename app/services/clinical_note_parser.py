@@ -1,5 +1,5 @@
 """
-author: @abhiynhaze
+author: @abhiyanhaze
 description: Parse classes for parsing the clinical notes file.
 Currently only Regexbased parser is implemented.
 """
