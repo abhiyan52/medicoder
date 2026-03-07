@@ -1,0 +1,61 @@
+"""
+    author: @abhiyantimilsina
+    description: Nodes for langgraph
+"""
+
+from pathlib import Path
+from typing import Dict
+
+from app.services.clinical_note_parser import build_default_clinical_parser
+from app.services.condition_extractor import ConditionExtractor
+from app.services.hcc_evaluator import HCCRelevanceEvaluator
+from app.graph.states import MedicoderState
+from app.utils.file_loader import load_file_from_path
+from app.utils.logger import logger
+
+HCC_CSV_PATH = Path(__file__).parent.parent.parent / "data" / "HCC_relevant_codes.csv"
+
+
+def input_handler_node(state: MedicoderState) -> Dict:
+    """
+    Resolves raw_input to clinical note text.
+    Accepts either a file path or raw text content.
+    """
+    raw_input = state["raw_input"]
+    path = Path(raw_input)
+
+    if path.exists() and path.is_file():
+        logger.info("Input detected as file path", path=str(path))
+        clinical_note = load_file_from_path(path)
+        if not clinical_note:
+            raise ValueError(f"Failed to load clinical note from file: {path}")
+    else:
+        logger.info("Input detected as raw text")
+        clinical_note = raw_input
+
+    return {"clinical_note": clinical_note}
+
+
+def clinical_note_parser_node(state: MedicoderState) -> Dict:
+    parser = build_default_clinical_parser()
+    parsed_sections = parser.parse(state["clinical_note"])
+    logger.info("Parsed clinical note", sections=list(parsed_sections.keys()))
+    return {"parsed_sections": parsed_sections}
+
+
+def condition_extractor_node(state: MedicoderState) -> Dict:
+    extractor = ConditionExtractor()
+
+    # Prefer the parsed assessment_plan section; fall back to the full note
+    sections = state["parsed_sections"]
+    assessment_text = " ".join(sections.get("assessment_plan", []))
+    note_text = assessment_text if assessment_text else state["clinical_note"]
+
+    conditions = extractor.extract(note_text)
+    return {"conditions": [c.model_dump() for c in conditions]}
+
+
+def hcc_relevance_checker_node(state: MedicoderState) -> Dict:
+    evaluator = HCCRelevanceEvaluator(HCC_CSV_PATH)
+    results = evaluator.evaluate(state["conditions"])
+    return {"results": results}

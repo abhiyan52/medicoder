@@ -79,10 +79,29 @@ class ConditionExtractor:
         logger.info("Running condition extraction", prompt_name=self.PROMPT_NAME)
 
         chain = self._build_chain(prompt_text)
-        raw_result = chain.invoke({"clinical_text": note})
+        try:
+            raw_result = chain.invoke({"clinical_text": note})
+        except Exception as e:
+            logger.error("chain.invoke failed during condition extraction",
+                         prompt_name=self.PROMPT_NAME, error=str(e), exc_info=True)
+            return []
 
-        # raw_result is already parsed into a list of dicts by JsonOutputParser
-        conditions = [ExtractedCondition(**item) for item in raw_result]
+        if not isinstance(raw_result, list):
+            logger.error("chain.invoke returned unexpected type; expected list of dicts from JsonOutputParser",
+                         actual_type=type(raw_result).__name__, raw_result=raw_result)
+            return []
+
+        # Build ExtractedCondition objects, skipping malformed or incomplete items
+        conditions = []
+        for item in raw_result:
+            if not isinstance(item, dict):
+                logger.warning("Skipping non-dict item in chain.invoke output",
+                               actual_type=type(item).__name__, item=item)
+                continue
+            if not item.get("condition") or not item.get("code"):
+                logger.warning("Skipping ExtractedCondition with missing fields", item=item)
+                continue
+            conditions.append(ExtractedCondition(**item))
 
         logger.info("Extraction complete", num_conditions=len(conditions))
         return conditions
