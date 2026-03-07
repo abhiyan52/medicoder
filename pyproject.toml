@@ -32,5 +32,34 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    "pytest (>=9.0.2,<10.0.0)"
+    "pytest (>=9.0.2,<10.0.0)",
+    "ruff (>=0.15.5,<0.16.0)",
+    "mypy (>=1.19.1,<2.0.0)"
 ]
+
+[tool.ruff]
+# Target version
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+# Enable Pyflakes (F), E/W (Pycodestyle), I (isort), B (flake8-bugbear)
+select = ["E", "F", "W", "I", "B", "UP", "N", "PLC", "PLE", "PLR", "PLW"]
+ignore = [
+    "PLR0913", # Allow more than 5 arguments in constructors
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "langchain.*"
+ignore_missing_imports = true

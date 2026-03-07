@@ -1,22 +1,22 @@
 """
-    author: @abhiynhaze
-    description: Parse classes for parsing the clinical notes file. Currently only Regexbased parser is implemented
+author: @abhiynhaze
+description: Parse classes for parsing the clinical notes file.
+Currently only Regexbased parser is implemented.
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 import re
+from abc import ABC, abstractmethod
+
 from app.utils.logger import logger
 
 
 class ClinicalNoteParser(ABC):
     @abstractmethod
-    def parse(self, note: str) -> Dict[str, List[str]]:
+    def parse(self, note: str) -> dict[str, list[str]]:
         pass
 
 
 class RegexBasedParser(ClinicalNoteParser):
-
     def __init__(self, *args, **kwargs):
         logger.info("Initializing RegexBasedParser")
         self._registry = {}
@@ -35,22 +35,25 @@ class RegexBasedParser(ClinicalNoteParser):
 
         self._registry[section].append(pattern)
 
-
-    def get_patterns(self, section: str) -> List[str]:
+    def get_patterns(self, section: str) -> list[str]:
         """
         Retrieve patterns registered for a section.
         """
         return self._registry.get(section, [])
 
-    def parse(self, note: str) -> Dict[str, List[str]]:
+    def parse(self, note: str) -> dict[str, list[str]]:
         """
         Parse the content of notes
         """
         results = {}
-        
+
         for section, patterns in self._registry.items():
             section_results = []
-            logger.info("Evaluating patterns for section", section=section, num_patterns=len(patterns))
+            logger.info(
+                "Evaluating patterns for section",
+                section=section,
+                num_patterns=len(patterns),
+            )
 
             for pattern in patterns:
                 # finditer will find all non-overlapping matches in the document
@@ -60,7 +63,7 @@ class RegexBasedParser(ClinicalNoteParser):
                 if section_results:
                     # First successful pattern wins; skip remaining fallbacks
                     break
-            
+
             if section_results:
                 results[section] = section_results
             else:
@@ -80,17 +83,17 @@ def build_default_clinical_parser() -> RegexBasedParser:
     # Assessment / Plan patterns
     parser.register(
         "assessment_plan",
-        r"Assessment\s*/\s*Plan\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)"
+        r"Assessment\s*/\s*Plan\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)",
     )
 
     parser.register(
         "assessment_plan",
-        r"Assessment\s+and\s+Plan\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)"
+        r"Assessment\s+and\s+Plan\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)",
     )
 
     parser.register(
         "assessment_plan",
-        r"Assessment\s*[:\-]?\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)"
+        r"Assessment\s*[:\-]?\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)",
     )
 
     return parser
