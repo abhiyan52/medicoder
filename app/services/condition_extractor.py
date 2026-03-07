@@ -5,7 +5,7 @@ description: Service / Tool to run the inference and get back the results.
 
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
-from langchain_google_vertexai import ChatVertexAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -45,8 +45,8 @@ class ConditionExtractor:
             project=settings.PROJECT_ID,
         )
 
-        self.model = ChatVertexAI(
-            model_name=self.config.model_name,
+        self.model = ChatGoogleGenerativeAI(
+            model=self.config.model_name,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             top_k=self.config.top_k,
