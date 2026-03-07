@@ -4,3 +4,4 @@ notebooks/*
 *.ipynb
 *.pyc
 .DS_Store
+output
