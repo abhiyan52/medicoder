@@ -24,15 +24,15 @@ COPY app/ ./app/
 # Copy static data: HCC reference CSV and bundled clinical notes
 COPY data/ ./data/
 
+# Create a non-root user and transfer ownership of the app directory
+RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser \
+    && chown -R appuser:appuser /app
+
 # Output is written here at runtime; declaring as a volume allows the caller
 # to bind-mount a host directory so results are persisted outside the container.
 VOLUME ["/app/output"]
 
-# Credentials are loaded from the .env file by default (via load_dotenv() in config.py).
-# Mount your .env at runtime:
-#   -v $(pwd)/.env:/app/.env
-# Individual variables can be overridden with -e, e.g.:
-#   -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/other-key.json
+USER appuser
 
 # Run the pipeline once and exit
 CMD ["python", "-m", "app.batch_runner"]
