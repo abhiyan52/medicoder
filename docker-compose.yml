@@ -1,0 +1,13 @@
+services:
+  medicoder:
+    build: .
+    image: medicoder
+    environment:
+      # Fixed container-side path — do not change this.
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/gcp-key.json
+    volumes:
+      # GCP_KEY_PATH is required. Set it to the host path of your service account key:
+      #   export GCP_KEY_PATH=/path/to/your/key.json
+      # or add it to a .env file before running docker compose up.
+      - ${GCP_KEY_PATH:?Set GCP_KEY_PATH to the host path of your GCP service account key}:/app/credentials/gcp-key.json:ro
+      - ./output:/app/output

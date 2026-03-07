@@ -5,3 +5,4 @@ notebooks/*
 *.pyc
 .DS_Store
 output
+*.pckl

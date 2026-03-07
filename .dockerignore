@@ -1,0 +1,34 @@
+# Git history
+.git/
+.gitignore
+
+# Local credentials — never bake these into the image
+.env
+.env.example
+credentials/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.mypy_cache/
+.ruff_cache/
+
+# Output from local runs
+output/
+
+# Development and notebooks
+notebooks/
+.ipynb_checkpoints/
+*.ipynb
+
+# Tests
+tests/
+
+# macOS
+.DS_Store
+
+# Editor / IDE
+.cursor/
+.vscode/
+.idea/
