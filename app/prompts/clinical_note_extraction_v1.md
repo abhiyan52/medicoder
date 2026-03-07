@@ -21,10 +21,10 @@ The relevant diagnoses are typically documented in the "Assessment" or "Assessme
 Return strictly valid JSON in the following format:
 
 [
-  {
+  {{
     "condition": "<condition name>",
     "code": "<ICD10 code>"
-  }
+  }}
 ]
 
 If no conditions are found, return an empty JSON array.

@@ -3,19 +3,42 @@ author: @abhiyanhaze
 description: Service / Tool to run the inference and get back the results.
 """
 
+from typing import Optional, List
+from pydantic import BaseModel, Field
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from app.utils.logger import logger
 from app.config import settings
 from app.utils.model_config_utils import ModelConfig, get_default_model_config
-from langchain_google_vertexai import ChatVertexAI
-from typing import Optional
+from app.utils.prompt_loader import get_prompt
 
+
+# ------------------------------------
+# Output Schema
+# ------------------------------------
+
+class ExtractedCondition(BaseModel):
+    condition: str = Field(description="The name of the diagnosed medical condition")
+    code: str = Field(description="The associated ICD-10-CM code")
+
+class ExtractionResult(BaseModel):
+    conditions: List[ExtractedCondition] = Field(default_factory=list)
+
+
+# ------------------------------------
+# Service
+# ------------------------------------
 
 class ConditionExtractor:
+    PROMPT_NAME = "clinical_note_extraction"
+    PROMPT_VERSION = None # This will take the latest version by default
+
     def __init__(self, config: Optional[ModelConfig] = None) -> None:
-        # Use provided config or fallback to defaults
         self.config = config or get_default_model_config()
-        
-        logger.info("Initializing ConditionExtractor", 
+
+        logger.info("Initializing ConditionExtractor",
                     model=self.config.model_name,
                     project=settings.PROJECT_ID)
 
@@ -27,4 +50,36 @@ class ConditionExtractor:
             project=settings.PROJECT_ID,
             location=settings.LOCATION,
         )
-        
+
+        self.parser = JsonOutputParser(pydantic_object=ExtractedCondition)
+
+    def _build_chain(self, prompt_text: str):
+        """
+        Build a LangChain LCEL chain: PromptTemplate | model | JsonOutputParser
+        """
+        prompt = PromptTemplate(
+            template=prompt_text,
+            input_variables=["clinical_text"],
+        )
+        return prompt | self.model | self.parser
+
+    def extract(self, note: str) -> List[ExtractedCondition]:
+        """
+        Extract conditions from the given clinical note.
+        Returns a list of ExtractedCondition objects.
+        """
+        prompt_text = get_prompt(self.PROMPT_NAME, self.PROMPT_VERSION)
+        if not prompt_text:
+            logger.error("Failed to load prompt", prompt_name=self.PROMPT_NAME)
+            return []
+
+        logger.info("Running condition extraction", prompt_name=self.PROMPT_NAME)
+
+        chain = self._build_chain(prompt_text)
+        raw_result = chain.invoke({"clinical_text": note})
+
+        # raw_result is already parsed into a list of dicts by JsonOutputParser
+        conditions = [ExtractedCondition(**item) for item in raw_result]
+
+        logger.info("Extraction complete", num_conditions=len(conditions))
+        return conditions

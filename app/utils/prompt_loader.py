@@ -39,6 +39,7 @@ def get_prompt(prompt_name: str, version: Optional[str] = None) -> Optional[str]
         available_files.sort(key=lambda x: x[0])
 
         target_file = None
+
         if version:
             # Look for specific version
             requested_v = int(re.sub(r"\D", "", version))
