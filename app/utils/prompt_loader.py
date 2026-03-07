@@ -41,10 +41,9 @@ def get_prompt(prompt_name: str, version: Optional[str] = None) -> Optional[str]
         target_file = None
         if version:
             # Look for specific version
-            # Allow user to pass '1' or 'v1'
-            search_v = version if version.startswith('v') else f"v{version}"
+            requested_v = int(re.sub(r"\D", "", version))
             for v_num, f in available_files:
-                if f.name == f"{prompt_name}_{search_v}.md":
+                if v_num == requested_v:
                     target_file = f
                     break
             

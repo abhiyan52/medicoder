@@ -57,6 +57,9 @@ class RegexBasedParser(ClinicalNoteParser):
                 for match in re.finditer(pattern, note, re.DOTALL | re.IGNORECASE):
                     if match.groups():
                         section_results.append(match.group(1).strip())
+                if section_results:
+                    # First successful pattern wins; skip remaining fallbacks
+                    break
             
             if section_results:
                 results[section] = section_results
