@@ -17,15 +17,18 @@ dependencies = [
     "google-cloud-aiplatform (>=1.140.0,<2.0.0)",
     "pydantic (>=2.12.5,<3.0.0)",
     "structlog (>=25.5.0,<26.0.0)",
-    "langgraph-cli (>=0.4.14,<0.5.0)"
+    "langgraph-cli (>=0.4.14,<0.5.0)",
+    "jupyter (>=1.1.1,<2.0.0)",
+    "langchain-google-vertexai (>=3.2.2,<4.0.0)"
 ]
 
 [tool.poetry]
-packages = [{include = "medicoder", from = "src"}]
+packages = [{include = "app"}]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
 
 [dependency-groups]
 dev = [

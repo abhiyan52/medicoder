@@ -1,1 +1,6 @@
 .env
+notebooks
+notebooks/*
+*.ipynb
+*.pyc
+.DS_Store
