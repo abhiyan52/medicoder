@@ -66,7 +66,13 @@ def condition_extractor_node(state: MedicoderState) -> Dict:
     # Prefer the parsed assessment_plan section; fall back to the full note
     sections = state["parsed_sections"]
     assessment_text = " ".join(sections.get("assessment_plan", []))
-    note_text = assessment_text if assessment_text else state["clinical_note"]
+    
+    if assessment_text:
+        logger.info("Using parsed assessment_plan section for extraction")
+        note_text = assessment_text
+    else:
+        logger.warning("No assessment_plan section detected; falling back to full clinical note for inference")
+        note_text = state["clinical_note"]
 
     conditions = extractor.extract(note_text)
     return {"conditions": [c.model_dump() for c in conditions]}

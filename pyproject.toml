@@ -34,7 +34,8 @@ build-backend = "poetry.core.masonry.api"
 dev = [
     "pytest (>=9.0.2,<10.0.0)",
     "ruff (>=0.15.5,<0.16.0)",
-    "mypy (>=1.19.1,<2.0.0)"
+    "mypy (>=1.19.1,<2.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)"
 ]
 
 [tool.ruff]
@@ -63,3 +64,12 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "langchain.*"
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests that require external services (e.g. LLM endpoints)"
+]
+filterwarnings = [
+    "ignore:Core Pydantic V1 functionality isn't compatible with Python 3.14:UserWarning",
+    "ignore:'_UnionGenericAlias' is deprecated:DeprecationWarning",
+]

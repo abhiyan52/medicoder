@@ -4,10 +4,13 @@ import sys
 import structlog
 
 
-def setup_logging(is_dev_mode: bool = True):
+import os
+
+def setup_logging():
     """
     Configure standard library logging and structlog.
     """
+    is_dev_mode = os.environ.get("ENV", "development").lower() not in ("production", "prod")
     # 1. Configure standard logging to route to structlog
     logging.basicConfig(
         format="%(message)s",

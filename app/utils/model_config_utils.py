@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class ModelConfig(BaseModel):
-    model_name: str = Field(default="gemini-2.0-flash-001")
+    model_name: str = Field(default="gemini-2.5-flash")
     temperature: float = Field(default=0.0)
     top_p: float = Field(default=0.0)
     top_k: int = Field(default=40)
