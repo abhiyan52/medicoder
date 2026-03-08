@@ -86,14 +86,4 @@ def build_default_clinical_parser() -> RegexBasedParser:
         r"Assessment\s*/\s*Plan\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)",
     )
 
-    parser.register(
-        "assessment_plan",
-        r"Assessment\s+and\s+Plan\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)",
-    )
-
-    parser.register(
-        "assessment_plan",
-        r"Assessment\s*[:\-]?\s*(.*?)(?:Return to Office|Encounter Sign-Off|$)",
-    )
-
     return parser

@@ -27,10 +27,6 @@ class ExtractedCondition(BaseModel):
     code: str = Field(description="The associated ICD-10-CM code")
 
 
-class ExtractionResult(BaseModel):
-    conditions: list[ExtractedCondition] = Field(default_factory=list)
-
-
 # ------------------------------------
 # Service
 # ------------------------------------

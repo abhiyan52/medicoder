@@ -140,34 +140,35 @@ The container runs the pipeline once and exits. No server is started.
 
 - [Docker](https://docs.docker.com/get-docker/) with Docker Compose
 
-### 1. Build the image
+### 1. Set up environment
+
+`GCP_KEY_PATH` is required for `docker compose up` — it mounts your key file into the container. Copy `.env.example` to `.env` and set your path:
 
 ```bash
-docker compose build
+cp .env.example .env
+# Edit .env and set:
+# GCP_KEY_PATH=/path/to/your/gcp-key.json
 ```
 
-### 2. Set the host path to your GCP key
-
-`GCP_KEY_PATH` is required — Docker Compose uses it to mount your key file into the container. Set it in your shell or add it to `.env`:
+Or export in your shell before running:
 
 ```bash
 export GCP_KEY_PATH=/path/to/your/gcp-key.json
 ```
 
-Or in `.env`:
+### 2. Build the image
 
-```env
-GCP_KEY_PATH=/path/to/your/gcp-key.json
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/gcp-key.json  # used for local runs
+```bash
+docker compose build
 ```
+
+Build works without any environment variables; a placeholder credentials file is used if `GCP_KEY_PATH` is unset.
 
 ### 3. Run
 
 ```bash
 docker compose up
 ```
-
-If `GCP_KEY_PATH` is not set, Compose will immediately error with a descriptive message.
 
 To rebuild after code or dependency changes:
 
@@ -185,6 +186,20 @@ docker compose up --build
 | `/app/output/` | Results written here; bind-mounted to `./output/` on the host |
 
 The container runs as a non-root user (`appuser`) for security.
+
+### Troubleshooting: empty `output/`
+
+If `output/` stays empty after `docker compose up`, the pipeline is likely failing (e.g. GCP auth or API errors). Run without `-d` to see logs:
+
+```bash
+docker compose up
+```
+
+Common causes:
+
+- **`GCP_KEY_PATH` not set or invalid** — Use a real GCP service account key with Vertex AI / Gemini API access. The placeholder file will cause auth failures.
+- **Key lacks permissions** — The service account needs `Vertex AI User` (or similar) to call Gemini.
+- **Billing / quotas** — Ensure the GCP project has billing enabled and Gemini API enabled.
 
 ---
 
