@@ -7,6 +7,7 @@ An automated medical coding pipeline that processes clinical progress notes, ext
 ## Table of Contents
 
 - [Solution Overview](#solution-overview)
+- [Architecture & Implementation](#architecture--implementation)
 - [Setup](#setup)
 - [Running the Pipeline](#running-the-pipeline)
 - [Docker](#docker)
@@ -61,6 +62,80 @@ One JSON file is written per note to `output/`:
   ]
 }
 ```
+
+---
+
+## Architecture & Implementation
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              ENTRY POINTS                                        │
+├────────────────────────────┬────────────────────────────────────────────────────┤
+│  batch_runner.py           │  langgraph dev (LangGraph Studio)                   │
+│  • Iterates data/notes/    │  • Serves graph via langgraph.json                 │
+│  • Writes to output/       │  • Interactive node inspection                     │
+└──────────────┬─────────────┴─────────────────────────┬──────────────────────────┘
+               │                                       │
+               └───────────────┬───────────────────────┘
+                               ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                    medicoder_pipeline.py (LangGraph StateGraph)                    │
+│  START → input_handler → parser → extractor → evaluator → END                      │
+│  State: MedicoderState (raw_input, clinical_note, parsed_sections, conditions,     │
+│         results) flows through nodes; each node merges its output into state     │
+└──────────────────────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                              NODES (app/graph/nodes.py)                           │
+├────────────────────┬─────────────────────┬──────────────────┬──────────────────┤
+│ input_handler_node  │ clinical_note_      │ condition_        │ hcc_relevance_    │
+│ • Path vs raw text  │ parser_node         │ extractor_node    │ checker_node      │
+│ • Loads file or     │ • RegexBasedParser  │ • Condition       │ • HCCRelevance    │
+│   passes through    │ • Extracts A/P      │   Extractor       │   Evaluator       │
+└────────┬────────────┴──────────┬──────────┴─────────┬──────────┴────────┬─────────┘
+         │                       │                    │                   │
+         ▼                       ▼                    │                   ▼
+┌─────────────────┐    ┌──────────────────┐           │          ┌─────────────────┐
+│ file_loader      │    │ clinical_note_  │           │          │ HCC_relevant_   │
+│ (utils)          │    │ parser          │           │          │ codes.csv       │
+└─────────────────┘    │ (services)      │           │          └─────────────────┘
+                        └─────────────────┘           │
+                                                      ▼
+                                        ┌─────────────────────────────────────────┐
+                                        │  ConditionExtractor (services)           │
+                                        │  • LangChain: PromptTemplate | Gemini |  │
+                                        │    JsonOutputParser                     │
+                                        │  • Prompts: app/prompts/*.md (versioned) │
+                                        │  • Config: app/config.py, model_config   │
+                                        └─────────────────────┬───────────────────┘
+                                                              │
+                                                              ▼
+                                        ┌─────────────────────────────────────────┐
+                                        │  Google Vertex AI / Gemini 2.5 Flash    │
+                                        │  (GOOGLE_APPLICATION_CREDENTIALS)        │
+                                        └─────────────────────────────────────────┘
+```
+
+### Component Description
+
+| Layer | Path | Components | Responsibility |
+|-------|------|------------|----------------|
+| **Graph** | `app/graph/` | `medicoder_pipeline.py`, `nodes.py`, `states.py` | LangGraph state machine: defines nodes, edges, and `MedicoderState`. Compiles to an executable graph. |
+| **Services** | `app/services/` | `condition_extractor.py`, `clinical_note_parser.py`, `hcc_evaluator.py` | Business logic: LLM extraction (Gemini), regex-based section parsing, HCC code lookup. |
+| **Utils** | `app/utils/` | `prompt_loader.py`, `file_loader.py`, `logger.py`, `text.py`, `model_config_utils.py` | Versioned prompt loading, file I/O, logging, ICD code normalization, model config (temperature, top_p, etc.). |
+| **Prompts** | `app/prompts/` | `clinical_note_extraction_v1.md` | Versioned prompt templates; loader selects latest or specified version. |
+| **Data** | `data/` | `notes/`, `HCC_relevant_codes.csv` | Input clinical notes (plain text) and HCC reference data. |
+| **Entry / Config** | `app/` | `batch_runner.py`, `config.py` | Batch runner processes `data/notes/`, writes to `output/`. Config loads GCP project ID, location, and credentials path from env. |
+
+### Key Design Choices
+
+- **LangGraph** — State machine makes the pipeline inspectable (LangGraph Studio), testable, and easy to extend with branches or human-in-the-loop.
+- **Versioned prompts** — Prompts live in `app/prompts/<name>_v<N>.md`; the loader returns the latest by default.
+- **Assessment/Plan focus** — Regex parser extracts that section first; extractor uses it when present, otherwise falls back to full note.
+- **Stateless services** — `ConditionExtractor` and `HCCRelevanceEvaluator` are instantiated once per process and reused; LLM calls are stateless per request.
 
 ---
 
