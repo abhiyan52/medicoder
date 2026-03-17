@@ -1,9 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, status
-from sqlalchemy.orm import Session
-
-from app.database import get_db
+from app.auth import verify_credentials
 from app.schemas.documents import (
     DocumentDetailResponse,
     DocumentHistoryItem,
@@ -13,11 +11,16 @@ from app.schemas.documents import (
 from app.services.document_service import DocumentService
 
 
-router = APIRouter(prefix="/documents", tags=["documents"])
+# All routes on this router require valid HTTP Basic Auth credentials
+router = APIRouter(
+    prefix="/documents",
+    tags=["documents"],
+    dependencies=[Depends(verify_credentials)],
+)
 
 
-def get_document_service(db: Session = Depends(get_db)) -> DocumentService:
-    return DocumentService(db)
+def get_document_service() -> DocumentService:
+    return DocumentService()
 
 
 DocumentServiceDep = Annotated[DocumentService, Depends(get_document_service)]
@@ -53,7 +56,7 @@ def list_documents(service: DocumentServiceDep) -> list[DocumentHistoryItem]:
     summary="Get document details",
 )
 def get_document(
-    document_id: int,
+    document_id: str,
     service: DocumentServiceDep,
 ) -> DocumentDetailResponse:
     return service.get_document_detail(document_id)

@@ -9,7 +9,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     def on_startup() -> None:
-        logger.info("Application startup complete; apply Alembic migrations externally before serving traffic")
+        logger.info("Application startup complete.")
 
     @app.get("/health")
     def healthcheck() -> dict[str, str]:

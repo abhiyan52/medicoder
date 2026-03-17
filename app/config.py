@@ -80,6 +80,14 @@ class AppConfig(BaseModel):
         default_factory=lambda: os.getenv("OUTPUT_DIR", "output")
     )
 
+    # Auth
+    API_USERNAME: str = Field(
+        default_factory=lambda: os.getenv("API_USERNAME", "admin")
+    )
+    API_PASSWORD: str = Field(
+        default_factory=lambda: os.getenv("API_PASSWORD", "changeme")
+    )
+
 
 # Singleton instance
 settings = AppConfig()

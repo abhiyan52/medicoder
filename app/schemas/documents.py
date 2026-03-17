@@ -1,10 +1,17 @@
+import enum
 from datetime import datetime
 from typing import Any, Optional
 
 from fastapi import Form
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import DocumentStatus
+
+class DocumentStatus(str, enum.Enum):
+    uploaded = "uploaded"
+    queued = "queued"
+    processing = "processing"
+    failed = "failed"
+    processed = "processed"
 
 
 class DocumentUploadRequest(BaseModel):
@@ -21,7 +28,7 @@ class DocumentUploadRequest(BaseModel):
 class DocumentUploadResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: str
     title: str
     file_url: str
     status: DocumentStatus
@@ -32,7 +39,7 @@ class DocumentUploadResponse(BaseModel):
 class DocumentHistoryItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: str
     title: str
     status: DocumentStatus
     created_at: datetime
@@ -42,7 +49,7 @@ class DocumentHistoryItem(BaseModel):
 class ProcessedResultItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: str
     extracted_code: Any
     hcc_code: Optional[Any] = None
 
@@ -50,7 +57,7 @@ class ProcessedResultItem(BaseModel):
 class DocumentDetailResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: str
     title: str
     file_url: str
     status: DocumentStatus

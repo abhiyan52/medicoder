@@ -37,5 +37,5 @@ USER appuser
 # Expose port 8080 for Cloud Run
 EXPOSE 8080
 
-# Run the FastAPI server
-CMD ["poetry", "run", "uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8080"]
+# Run the FastAPI server using python -m to avoid PATH issues
+CMD ["python", "-m", "uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8080"]
