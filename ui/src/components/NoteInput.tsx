@@ -1,3 +1,5 @@
+import type { KeyboardEvent } from "react";
+
 interface NoteInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -6,8 +8,9 @@ interface NoteInputProps {
 }
 
 export function NoteInput({ value, onChange, onSubmit, isLoading }: NoteInputProps) {
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
       if (isLoading) return;
       if (!value.trim()) return;
       onSubmit();
@@ -39,6 +42,7 @@ export function NoteInput({ value, onChange, onSubmit, isLoading }: NoteInputPro
         }}
       />
       <button
+        type="button"
         onClick={onSubmit}
         disabled={isLoading || !value.trim()}
         style={{
@@ -56,7 +60,7 @@ export function NoteInput({ value, onChange, onSubmit, isLoading }: NoteInputPro
         {isLoading ? "Processing..." : "Extract Conditions"}
       </button>
       <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>
-        Tip: Cmd+Enter to submit
+        Tip: Cmd/Ctrl+Enter to submit
       </p>
     </div>
   );

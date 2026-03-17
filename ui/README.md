@@ -48,7 +48,7 @@ Description:
 ## Local API
 
 Expected environment variables:
-- `VITE_API_BASE_URL`: Base URL for the local Medicoder API.
+- `VITE_API_URL`: Base URL for the local Medicoder API.
 
 Required endpoints:
 
@@ -138,25 +138,13 @@ Build for production:
 npm run build
 ```
 
-Run unit tests:
-
-```bash
-npm run test
-```
-
-Run e2e tests:
-
-```bash
-npm run test:e2e
-```
-
 Mock services:
-- Point `VITE_API_BASE_URL` at a local API stub or the backend dev server.
+- Point `VITE_API_URL` at a local API stub or the backend dev server.
 - Keep the backend running before exercising process and history flows.
 
 ## Troubleshooting
 
-- If requests fail in development, verify `VITE_API_BASE_URL` and confirm the backend is running.
+- If requests fail in development, verify `VITE_API_URL` and confirm the backend is running.
 - If uploads do not work, confirm the selected file is a `.txt` file and the API accepts `multipart/form-data`.
 - If history shows unknown dates, inspect the backend `processed_at` field for invalid timestamps.
 
