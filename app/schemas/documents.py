@@ -30,7 +30,6 @@ class DocumentUploadResponse(BaseModel):
 
     id: str
     title: str
-    file_url: str
     status: DocumentStatus
     created_at: datetime
     updated_at: datetime
@@ -64,7 +63,6 @@ class DocumentDetailResponse(BaseModel):
 
     id: str
     title: str
-    file_url: str
     status: DocumentStatus
     extracted_text: Optional[str] = None
     processed_results: list[ProcessedResultItem] = Field(default_factory=list)

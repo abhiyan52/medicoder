@@ -31,7 +31,6 @@ export interface UploadDocumentRequest {
 export interface UploadDocumentResponse {
   id: string;
   title: string;
-  file_url: string;
   status: DocumentStatus;
   created_at: string;
   updated_at: string;
@@ -64,7 +63,6 @@ export interface ProcessedResultItem {
 export interface DocumentDetail {
   id: string;
   title: string;
-  file_url: string;
   status: DocumentStatus;
   extracted_text: string | null;
   processed_results: ProcessedResultItem[];

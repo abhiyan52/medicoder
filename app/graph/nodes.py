@@ -10,7 +10,6 @@ from app.services.clinical_note_parser import build_default_clinical_parser
 from app.services.condition_extractor import ConditionExtractor
 from app.services.hcc_evaluator import HCCRelevanceEvaluator
 from app.graph.states import MedicoderState
-from app.utils.file_loader import load_file_from_path
 from app.utils.logger import logger
 
 HCC_CSV_PATH = Path(__file__).parent.parent.parent / "data" / "HCC_relevant_codes.csv"
@@ -35,21 +34,12 @@ def _get_hcc_evaluator() -> HCCRelevanceEvaluator:
 
 def input_handler_node(state: MedicoderState) -> Dict:
     """
-    Resolves raw_input to clinical note text.
-    Accepts either a file path or raw text content.
+    Passes extracted document text through to the pipeline.
     """
-    raw_input = state["raw_input"]
-    path = Path(raw_input)
-
-    if path.exists() and path.is_file():
-        logger.info("Input detected as file path", path=str(path))
-        clinical_note = load_file_from_path(path)
-        if not clinical_note:
-            raise ValueError(f"Failed to load clinical note from file: {path}")
-    else:
-        logger.info("Input detected as raw text")
-        clinical_note = raw_input
-
+    clinical_note = state["raw_input"]
+    if not clinical_note:
+        raise ValueError("No text content provided")
+    logger.info("Input received from uploaded document")
     return {"clinical_note": clinical_note}
 
 
