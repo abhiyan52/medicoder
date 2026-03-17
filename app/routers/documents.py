@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, status
-from app.auth import verify_credentials
+from app.auth import verify_token
 from app.schemas.documents import (
     DocumentDetailResponse,
     DocumentHistoryPageResponse,
@@ -11,11 +11,11 @@ from app.schemas.documents import (
 from app.services.document_service import DocumentService
 
 
-# All routes on this router require valid HTTP Basic Auth credentials
+# All routes on this router require Bearer-token verification via `verify_token`.
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],
-    dependencies=[Depends(verify_credentials)],
+    dependencies=[Depends(verify_token)],
 )
 
 

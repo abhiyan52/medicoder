@@ -10,3 +10,5 @@ output
 .venv
 *.db
 uploads/
+.codex/*
+.claude/*

@@ -84,6 +84,15 @@ class AppConfig(BaseModel):
     API_USERNAME: str = Field(default_factory=lambda: os.getenv("API_USERNAME"))
     API_PASSWORD: str = Field(default_factory=lambda: os.getenv("API_PASSWORD"))
 
+    # JWT Auth settings
+    JWT_SECRET_KEY: str = Field(default_factory=lambda: os.getenv("JWT_SECRET_KEY"))
+    JWT_ALGORITHM: str = Field(
+        default_factory=lambda: os.getenv("JWT_ALGORITHM", "HS256")
+    )
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default_factory=lambda: int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    )
+
     @field_validator("API_USERNAME", "API_PASSWORD")
     @classmethod
     def validate_api_credentials(cls, value: str | None, info) -> str:
@@ -95,6 +104,18 @@ class AppConfig(BaseModel):
             raise ValueError(
                 f"{field_name} must not use a placeholder or public default value"
             )
+        return normalized
+
+    @field_validator("JWT_SECRET_KEY")
+    @classmethod
+    def validate_jwt_secret_key(cls, value: str | None) -> str:
+        normalized = (value or "").strip()
+        if not normalized:
+            raise ValueError("JWT_SECRET_KEY must be set and non-empty")
+        if normalized == "your-secret-key-change-this-in-production":
+            raise ValueError("JWT_SECRET_KEY must not use the placeholder value")
+        if len(normalized) < 32:
+            raise ValueError("JWT_SECRET_KEY must be at least 32 characters long")
         return normalized
 
 
