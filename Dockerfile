@@ -34,5 +34,8 @@ VOLUME ["/app/output"]
 
 USER appuser
 
-# Run the pipeline once and exit
-CMD ["python", "-m", "app.batch_runner"]
+# Expose port 8080 for Cloud Run
+EXPOSE 8080
+
+# Run the FastAPI server
+CMD ["poetry", "run", "uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8080"]
