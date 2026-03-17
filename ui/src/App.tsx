@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,6 +15,22 @@ import { ResultsTable } from "./components/ResultsTable";
 import type { AuthSession, DocumentDetail, DocumentHistoryItem, DocumentStatus } from "./types";
 
 type View = "workspace" | "detail";
+
+function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
+
+function getErrorMessage(error: unknown) {
+  if (isApiError(error)) {
+    return error.message;
+  }
+
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return "An unexpected error occurred";
+}
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
@@ -106,7 +122,7 @@ function LoginScreen({ onSuccess }: LoginScreenProps) {
           </label>
 
           {loginMutation.isError && (
-            <ErrorMessage message={(loginMutation.error as ApiError).message} />
+            <ErrorMessage message={getErrorMessage(loginMutation.error)} />
           )}
 
           <button className="button button-primary button-block" type="submit" disabled={loginMutation.isPending}>
@@ -143,11 +159,6 @@ function AuthenticatedApp({
     queryKey: ["documents", session.token],
     queryFn: () => fetchDocuments(session.token),
   });
-
-  const selectedHistoryItem = useMemo(
-    () => documentsQuery.data?.items.find((item) => item.id === selectedDocumentId) ?? null,
-    [documentsQuery.data?.items, selectedDocumentId],
-  );
 
   const detailQuery = useQuery({
     queryKey: ["document-detail", selectedDocumentId, session.token],
@@ -255,7 +266,7 @@ function AuthenticatedApp({
                 )}
 
                 {uploadMutation.isError && (
-                  <ErrorMessage message={(uploadMutation.error as ApiError).message} />
+                  <ErrorMessage message={getErrorMessage(uploadMutation.error)} />
                 )}
 
                 <button
@@ -279,7 +290,7 @@ function AuthenticatedApp({
               {documentsQuery.isLoading && <EmptyState message="Loading document history..." />}
 
               {documentsQuery.isError && (
-                <ErrorMessage message={(documentsQuery.error as ApiError).message} />
+                <ErrorMessage message={getErrorMessage(documentsQuery.error)} />
               )}
 
               {documentsQuery.data && documentsQuery.data.items.length === 0 && (
@@ -317,14 +328,11 @@ function AuthenticatedApp({
             {detailQuery.isLoading && selectedDocumentId && <EmptyState message="Loading extraction detail..." />}
 
             {detailQuery.isError && (
-              <ErrorMessage message={(detailQuery.error as ApiError).message} />
+              <ErrorMessage message={getErrorMessage(detailQuery.error)} />
             )}
 
             {detailQuery.data && (
-              <DocumentDetailPanel
-                detail={detailQuery.data}
-                fallbackSummary={selectedHistoryItem}
-              />
+              <DocumentDetailPanel detail={detailQuery.data} />
             )}
           </section>
         )}
@@ -359,10 +367,9 @@ function HistoryRow({ document, selected, onOpen }: HistoryRowProps) {
 
 interface DocumentDetailPanelProps {
   detail: DocumentDetail;
-  fallbackSummary: DocumentHistoryItem | null;
 }
 
-function DocumentDetailPanel({ detail, fallbackSummary }: DocumentDetailPanelProps) {
+function DocumentDetailPanel({ detail }: DocumentDetailPanelProps) {
   const totalResults = detail.processed_results.length;
   const hccCount = detail.processed_results.filter((item) => Boolean(item.hcc_code?.hcc_relevant)).length;
   const rows = detail.processed_results.map((item) => ({
@@ -412,7 +419,7 @@ function DocumentDetailPanel({ detail, fallbackSummary }: DocumentDetailPanelPro
           <h3>Extracted text</h3>
         </div>
         <div className="text-panel">
-          {detail.extracted_text?.trim() || fallbackSummary?.title || "Extracted text is not available yet."}
+          {detail.extracted_text?.trim() || "Extracted text is not available yet."}
         </div>
       </section>
     </div>

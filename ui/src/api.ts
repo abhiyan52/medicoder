@@ -11,6 +11,19 @@ import type {
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const SESSION_STORAGE_KEY = "medicoder-session";
 
+function isAuthSession(value: unknown): value is AuthSession {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const session = value as Record<string, unknown>;
+  return (
+    typeof session.username === "string" &&
+    typeof session.token === "string" &&
+    typeof session.tokenType === "string"
+  );
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -60,7 +73,13 @@ export function getSession(): AuthSession | null {
   }
 
   try {
-    return JSON.parse(raw) as AuthSession;
+    const parsed = JSON.parse(raw);
+    if (isAuthSession(parsed)) {
+      return parsed;
+    }
+
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    return null;
   } catch {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     return null;

@@ -27,8 +27,8 @@ export function ResultsTable({ results }: ResultsTableProps) {
             </tr>
           </thead>
           <tbody>
-            {results.map((result) => (
-              <tr key={`${result.condition}-${result.code}`}>
+            {results.map((result, index) => (
+              <tr key={`${result.condition}-${result.code}-${index}`}>
                 <td>{result.condition}</td>
                 <td className="mono-cell">{result.code}</td>
                 <td>

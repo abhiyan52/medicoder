@@ -7,7 +7,7 @@
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --bg-page: #f8fafc;
@@ -404,7 +404,7 @@ h3 {
 
 .info-value-mono,
 .mono-cell {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
 .metric-card strong {
