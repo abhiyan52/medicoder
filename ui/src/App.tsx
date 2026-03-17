@@ -25,8 +25,11 @@ export default function App() {
   });
 
   function handlePasteSubmit() {
+    const normalized = note.trim();
+    if (!normalized) return;
+
+    mutate({ type: "text", note: normalized });
     reset();
-    mutate({ type: "text", note });
   }
 
   function handleFileSelected(file: File) {

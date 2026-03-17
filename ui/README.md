@@ -1,73 +1,167 @@
-# React + TypeScript + Vite
+# Medicoder UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+Medicoder UI is the React + TypeScript frontend for submitting clinical notes, tracking processing history, and reviewing extracted ICD-10 and HCC results.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Architecture:
+- `src/App.tsx` coordinates the main process/history views.
+- `src/api.ts` contains HTTP calls to the local API.
+- `src/components/` holds focused UI blocks for note entry, uploads, history, and results.
+- `src/types.ts` defines the frontend contracts expected from the API.
 
-## React Compiler
+## App Flows
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Process Note
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+Paste note -> Submit -> POST /process/text -> Receive extracted results -> Render results table
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Description:
+- The user pastes a clinical note.
+- The UI submits trimmed text to the backend.
+- The response is rendered as a condition table with HCC status.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Upload
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+Select .txt file -> POST /process/file -> Backend processes file -> Render extracted results
 ```
+
+Description:
+- The user uploads a plain text clinical note.
+- The UI rejects invalid file types at runtime before sending them.
+- Successful responses reuse the same results view as pasted notes.
+
+### History
+
+```text
+Open History tab -> GET /history -> Expand entry -> Review stored processing output
+```
+
+Description:
+- The UI loads previously processed notes.
+- Each row shows note metadata and counts.
+- Expanding a row reveals detailed extraction results.
+
+## Local API
+
+Expected environment variables:
+- `VITE_API_BASE_URL`: Base URL for the local Medicoder API.
+
+Required endpoints:
+
+### `POST /process/text`
+
+Request:
+
+```json
+{
+  "note": "Assessment and plan text..."
+}
+```
+
+Response:
+
+```json
+{
+  "note_id": "pn_1",
+  "results": [
+    {
+      "condition": "Type 2 Diabetes Mellitus",
+      "code": "E11.9",
+      "hcc_relevant": true
+    }
+  ]
+}
+```
+
+### `POST /process/file`
+
+Request:
+- `multipart/form-data`
+- field: `file`
+
+Response:
+
+```json
+{
+  "note_id": "pn_1",
+  "results": [
+    {
+      "condition": "Hypertension",
+      "code": "I10",
+      "hcc_relevant": false
+    }
+  ]
+}
+```
+
+### `GET /history`
+
+Response:
+
+```json
+[
+  {
+    "note_id": "pn_1",
+    "processed_at": "2026-03-17T10:00:00Z",
+    "result_count": 2,
+    "hcc_count": 1,
+    "results": []
+  }
+]
+```
+
+Notes:
+- `processed_at` should be a valid ISO-8601 timestamp.
+- `results` must match the same condition shape used by the process endpoints.
+
+## Run & Test
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the dev server:
+
+```bash
+npm run dev
+```
+
+Build for production:
+
+```bash
+npm run build
+```
+
+Run unit tests:
+
+```bash
+npm run test
+```
+
+Run e2e tests:
+
+```bash
+npm run test:e2e
+```
+
+Mock services:
+- Point `VITE_API_BASE_URL` at a local API stub or the backend dev server.
+- Keep the backend running before exercising process and history flows.
+
+## Troubleshooting
+
+- If requests fail in development, verify `VITE_API_BASE_URL` and confirm the backend is running.
+- If uploads do not work, confirm the selected file is a `.txt` file and the API accepts `multipart/form-data`.
+- If history shows unknown dates, inspect the backend `processed_at` field for invalid timestamps.
+
+## Contributing
+
+- Keep API integration logic in `src/api.ts` and avoid embedding fetch logic in components.
+- Prefer small presentational components with typed props.
+- Update this README when API contracts or local developer workflows change.

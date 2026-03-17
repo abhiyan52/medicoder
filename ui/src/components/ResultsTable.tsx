@@ -39,10 +39,10 @@ export function ResultsTable({ results }: ResultsTableProps) {
         >
           <thead>
             <tr style={{ background: "#f9fafb" }}>
-              <th style={th}>#</th>
-              <th style={{ ...th, textAlign: "left" }}>Condition</th>
-              <th style={th}>ICD-10 Code</th>
-              <th style={th}>HCC</th>
+              <th scope="col" style={th}>#</th>
+              <th scope="col" style={{ ...th, textAlign: "left" }}>Condition</th>
+              <th scope="col" style={th}>ICD-10 Code</th>
+              <th scope="col" style={th}>HCC</th>
             </tr>
           </thead>
           <tbody>

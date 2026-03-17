@@ -8,6 +8,8 @@ interface NoteInputProps {
 export function NoteInput({ value, onChange, onSubmit, isLoading }: NoteInputProps) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      if (isLoading) return;
+      if (!value.trim()) return;
       onSubmit();
     }
   }

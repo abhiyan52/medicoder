@@ -10,13 +10,24 @@ export function FileUpload({ onFile, isLoading }: FileUploadProps) {
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState<File | null>(null);
 
+  function isTxtFile(file: File) {
+    return file.type === "text/plain" || file.name.toLowerCase().endsWith(".txt");
+  }
+
   function handleFile(file: File) {
+    if (!isTxtFile(file)) {
+      setSelected(null);
+      return;
+    }
+
     setSelected(file);
     onFile(file);
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
+    if (isLoading) return;
+
     setDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);

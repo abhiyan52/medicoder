@@ -59,9 +59,11 @@ interface HistoryRowProps {
 }
 
 function HistoryRow({ entry, isExpanded, onToggle }: HistoryRowProps) {
-  const date = entry.processed_at
-    ? new Date(entry.processed_at).toLocaleString()
-    : "Unknown date";
+  const parsedDate = entry.processed_at ? new Date(entry.processed_at) : null;
+  const date =
+    parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? parsedDate.toLocaleString()
+      : "Unknown date";
 
   return (
     <div
