@@ -1,4 +1,6 @@
 import secrets
+from typing import Annotated
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
@@ -7,7 +9,9 @@ from app.config import settings
 security = HTTPBasic()
 
 
-def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)) -> str:
+def verify_credentials(
+    credentials: Annotated[HTTPBasicCredentials, Depends(security)],
+) -> str:
     """
     FastAPI dependency that enforces HTTP Basic Auth.
 

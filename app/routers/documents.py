@@ -4,7 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, statu
 from app.auth import verify_credentials
 from app.schemas.documents import (
     DocumentDetailResponse,
-    DocumentHistoryItem,
+    DocumentHistoryPageResponse,
     DocumentUploadRequest,
     DocumentUploadResponse,
 )
@@ -43,11 +43,15 @@ def upload_document(
 
 @router.get(
     "",
-    response_model=list[DocumentHistoryItem],
+    response_model=DocumentHistoryPageResponse,
     summary="Get document history",
 )
-def list_documents(service: DocumentServiceDep) -> list[DocumentHistoryItem]:
-    return service.get_document_history()
+def list_documents(
+    service: DocumentServiceDep,
+    page_size: int = 50,
+    page_token: str | None = None,
+) -> DocumentHistoryPageResponse:
+    return service.get_document_history(page_size=page_size, page_token=page_token)
 
 
 @router.get(

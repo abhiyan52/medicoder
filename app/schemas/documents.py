@@ -46,6 +46,11 @@ class DocumentHistoryItem(BaseModel):
     updated_at: datetime
 
 
+class DocumentHistoryPageResponse(BaseModel):
+    items: list[DocumentHistoryItem]
+    next_page_token: Optional[str] = None
+
+
 class ProcessedResultItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

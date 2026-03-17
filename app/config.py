@@ -2,7 +2,7 @@ import json
 import os
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.utils.logger import logger
 
@@ -81,12 +81,21 @@ class AppConfig(BaseModel):
     )
 
     # Auth
-    API_USERNAME: str = Field(
-        default_factory=lambda: os.getenv("API_USERNAME", "admin")
-    )
-    API_PASSWORD: str = Field(
-        default_factory=lambda: os.getenv("API_PASSWORD", "changeme")
-    )
+    API_USERNAME: str = Field(default_factory=lambda: os.getenv("API_USERNAME"))
+    API_PASSWORD: str = Field(default_factory=lambda: os.getenv("API_PASSWORD"))
+
+    @field_validator("API_USERNAME", "API_PASSWORD")
+    @classmethod
+    def validate_api_credentials(cls, value: str | None, info) -> str:
+        field_name = info.field_name
+        normalized = (value or "").strip()
+        if not normalized:
+            raise ValueError(f"{field_name} must be set and non-empty")
+        if normalized.lower() in {"admin", "changeme"}:
+            raise ValueError(
+                f"{field_name} must not use a placeholder or public default value"
+            )
+        return normalized
 
 
 # Singleton instance
