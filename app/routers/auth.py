@@ -27,7 +27,13 @@ async def login_for_access_token(
         form_data.password.encode("utf-8"), settings.API_PASSWORD.encode("utf-8")
     )
 
-    if not (is_valid_user and is_valid_pass):
+    if not is_valid_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not is_valid_pass:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

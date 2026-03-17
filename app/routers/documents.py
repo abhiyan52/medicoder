@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from app.auth import verify_token
 from app.schemas.documents import (
     DocumentDetailResponse,
@@ -26,6 +26,9 @@ def get_document_service() -> DocumentService:
 DocumentServiceDep = Annotated[DocumentService, Depends(get_document_service)]
 
 
+MAX_FILE_SIZE = 10 * 1024  # 10 KB
+
+
 @router.post(
     "",
     response_model=DocumentUploadResponse,
@@ -38,6 +41,19 @@ def upload_document(
     service: DocumentServiceDep,
     background_tasks: BackgroundTasks,
 ) -> DocumentUploadResponse:
+    media_type = (file.content_type or "").lower().split(";")[0].strip()
+    if not media_type.startswith("text/plain"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only plain text files (.txt) are supported.",
+        )
+    content = file.file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"File size exceeds the {MAX_FILE_SIZE // 1024} KB limit.",
+        )
+    file.file.seek(0)
     return service.upload_document(payload, file, background_tasks)
 
 

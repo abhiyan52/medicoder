@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
@@ -154,6 +154,28 @@ function AuthenticatedApp({
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024; // 10 KB
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0] ?? null;
+    setFileError(null);
+    if (selected) {
+      const isPlainText = selected.type === "text/plain" || /\.txt$/i.test(selected.name);
+      if (!isPlainText) {
+        setFileError("Only plain text files (.txt) are supported.");
+        setFile(null);
+        return;
+      }
+      if (selected.size > MAX_FILE_SIZE) {
+        setFileError(`File size exceeds the ${MAX_FILE_SIZE / 1024} KB limit.`);
+        setFile(null);
+        return;
+      }
+    }
+    setFile(selected);
+  }
 
   const documentsQuery = useQuery({
     queryKey: ["documents", session.token],
@@ -175,6 +197,7 @@ function AuthenticatedApp({
     onSuccess: async (document) => {
       setTitle("");
       setFile(null);
+      setFileError(null);
       onSelectDocument(document.id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["documents", session.token] }),
@@ -254,9 +277,12 @@ function AuthenticatedApp({
                   <input
                     className="input"
                     type="file"
-                    onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                    accept="text/plain,.txt"
+                    onChange={handleFileChange}
                   />
                 </label>
+
+                {fileError && <ErrorMessage message={fileError} />}
 
                 {file && (
                   <div className="file-meta">
@@ -272,7 +298,7 @@ function AuthenticatedApp({
                 <button
                   className="button button-primary"
                   type="submit"
-                  disabled={uploadMutation.isPending || !title.trim() || !file}
+                  disabled={uploadMutation.isPending || !title.trim() || !file || Boolean(fileError)}
                 >
                   {uploadMutation.isPending ? "Uploading..." : "Upload document"}
                 </button>
@@ -356,7 +382,6 @@ function HistoryRow({ document, selected, onOpen }: HistoryRowProps) {
           <StatusBadge status={document.status} />
         </div>
         <div className="history-meta">
-          <span>{document.id}</span>
           <span>{formatDate(document.created_at)}</span>
         </div>
       </div>
@@ -382,7 +407,6 @@ function DocumentDetailPanel({ detail }: DocumentDetailPanelProps) {
     <div className="stack-xl">
       <section className="detail-grid">
         <InfoCard label="Title" value={detail.title} />
-        <InfoCard label="Document ID" value={detail.id} mono />
         <InfoCard label="Status" value={<StatusBadge status={detail.status} />} />
         <InfoCard label="Updated" value={formatDate(detail.updated_at)} />
       </section>
