@@ -1,11 +1,17 @@
+import logging
 import time
+
 from fastapi import BackgroundTasks, HTTPException, UploadFile, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import Document, DocumentStatus
 from app.schemas.documents import DocumentUploadRequest
-from app.utils.storage import StorageBackend
+from app.utils.storage import DocumentStorageError, StorageBackend
+
+
+logger = logging.getLogger(__name__)
 
 
 def process_document_background(document_id: int):
@@ -22,20 +28,29 @@ def process_document_background(document_id: int):
             db.commit()
 
             # Simulate heavy processing (e.g. LangGraph)
-            print(f"Starting processing pipeline for Document {document_id}...")
+            logger.info("Starting processing pipeline", extra={"document_id": document_id})
             # We would use StorageBackend.read_document_text(doc.file_url) here right before processing!
             time.sleep(5)  # Placeholder
 
             # Mark processed
             doc.status = DocumentStatus.processed
             db.commit()
-            print(f"Finished processing pipeline for Document {document_id}")
+            logger.info("Finished processing pipeline", extra={"document_id": document_id})
 
-        except Exception as e:
-            print(f"Processing failed for Document {document_id}: {e}")
+        except (SQLAlchemyError, DocumentStorageError, ValueError, OSError) as exc:
+            logger.exception(
+                "Processing failed",
+                extra={
+                    "document_id": document_id,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            )
             db.rollback()
-            doc.status = DocumentStatus.failed
-            db.commit()
+            fresh_doc = db.get(Document, document_id)
+            if fresh_doc is not None:
+                fresh_doc.status = DocumentStatus.failed
+                db.commit()
 
     finally:
         db.close()
@@ -54,24 +69,28 @@ class DocumentService:
         background_tasks: BackgroundTasks,
     ) -> Document:
         file_url = StorageBackend.save_document(file)
+        try:
+            # Persist a newly uploaded document and return the stored record.
+            document = Document(
+                title=payload.title,
+                file_url=file_url,
+                status=DocumentStatus.uploaded,
+            )
+            self.db.add(document)
+            self.db.commit()
+            self.db.refresh(document)
 
-        # Persist a newly uploaded document and return the stored record.
-        document = Document(
-            title=payload.title,
-            file_url=file_url,
-            status=DocumentStatus.uploaded
-        )
-        self.db.add(document)
-        self.db.commit()
-        self.db.refresh(document)
+            # Queue the background processing only after the document exists in the DB.
+            background_tasks.add_task(process_document_background, document.id)
 
-        # Queue the background processing
-        background_tasks.add_task(process_document_background, document.id)
-
-        # Update status to queued
-        document.status = DocumentStatus.queued
-        self.db.commit()
-        self.db.refresh(document)
+            # Update status to queued once the task has been scheduled.
+            document.status = DocumentStatus.queued
+            self.db.commit()
+            self.db.refresh(document)
+        except Exception:
+            self.db.rollback()
+            StorageBackend.delete_document(file_url)
+            raise
 
         return document
 

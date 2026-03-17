@@ -9,7 +9,7 @@ from app.schemas.documents import (
 __all__ = [
     "DocumentDetailResponse",
     "DocumentHistoryItem",
-    "ProcessedResultItem",
     "DocumentUploadRequest",
     "DocumentUploadResponse",
+    "ProcessedResultItem",
 ]

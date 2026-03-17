@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from app.database import Base, engine
 from app.routers import documents_router
+from app.utils.logger import logger
 
 
 def create_app() -> FastAPI:
@@ -9,7 +9,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     def on_startup() -> None:
-        Base.metadata.create_all(bind=engine)
+        logger.info("Application startup complete; apply Alembic migrations externally before serving traffic")
 
     @app.get("/health")
     def healthcheck() -> dict[str, str]:

@@ -1,3 +1,4 @@
+from datetime import datetime
 import enum
 from typing import Any
 from sqlalchemy import DateTime, Integer, String, Text, func, ForeignKey, JSON
@@ -24,19 +25,21 @@ class Document(Base):
         default=DocumentStatus.uploaded,
         nullable=False,
     )
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
     )
-    updated_at: Mapped[DateTime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
     )
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    processed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    processed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     processed_results: Mapped[list["ProcessedResult"]] = relationship(
         back_populates="document",
@@ -48,8 +51,10 @@ class ProcessedResult(Base):
     __tablename__ = "processed_results"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    document_id: Mapped[int] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
+    )
     extracted_code: Mapped[Any] = mapped_column(JSON, nullable=False)
     hcc_code: Mapped[Any | None] = mapped_column(JSON, nullable=True)
-    
+
     document: Mapped["Document"] = relationship(back_populates="processed_results")
