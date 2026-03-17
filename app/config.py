@@ -84,6 +84,17 @@ class AppConfig(BaseModel):
     API_USERNAME: str = Field(default_factory=lambda: os.getenv("API_USERNAME"))
     API_PASSWORD: str = Field(default_factory=lambda: os.getenv("API_PASSWORD"))
 
+    # JWT Auth settings
+    JWT_SECRET_KEY: str = Field(
+        default_factory=lambda: os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+    )
+    JWT_ALGORITHM: str = Field(
+        default_factory=lambda: os.getenv("JWT_ALGORITHM", "HS256")
+    )
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default_factory=lambda: int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    )
+
     @field_validator("API_USERNAME", "API_PASSWORD")
     @classmethod
     def validate_api_credentials(cls, value: str | None, info) -> str:

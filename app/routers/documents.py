@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, status
-from app.auth import verify_credentials
+from app.auth import verify_token
 from app.schemas.documents import (
     DocumentDetailResponse,
     DocumentHistoryPageResponse,
@@ -15,7 +15,7 @@ from app.services.document_service import DocumentService
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],
-    dependencies=[Depends(verify_credentials)],
+    dependencies=[Depends(verify_token)],
 )
 
 
