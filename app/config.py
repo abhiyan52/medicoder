@@ -64,6 +64,9 @@ class AppConfig(BaseModel):
     LOCATION: str = Field(
         default_factory=lambda: os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
     )
+    GCS_BUCKET_NAME: str | None = Field(
+        default_factory=lambda: os.getenv("GCS_BUCKET_NAME")
+    )
 
     # API server settings
     API_HOST: str = Field(default_factory=lambda: os.getenv("API_HOST", "127.0.0.1"))
