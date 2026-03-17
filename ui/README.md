@@ -1,155 +1,97 @@
 # Medicoder UI
 
-## Overview
+The React + TypeScript frontend for the Medicoder medical coding platform. This application allows clinicians to securely upload clinical notes, track asynchronous processing status, and review extracted ICD-10 and HCC results via a modern, responsive dashboard.
 
-Medicoder UI is the React + TypeScript frontend for submitting clinical notes, tracking processing history, and reviewing extracted ICD-10 and HCC results.
+---
 
-Architecture:
-- `src/App.tsx` coordinates the main process/history views.
-- `src/api.ts` contains HTTP calls to the local API.
-- `src/components/` holds focused UI blocks for note entry, uploads, history, and results.
-- `src/types.ts` defines the frontend contracts expected from the API.
+## 🏗 Architecture
 
-## App Flows
+The UI is built as a single-page application (SPA) focused on clean architecture and performance:
 
-### Process Note
+- **Framework**: [React](https://react.dev/) using [Vite](https://vitejs.dev/) for blazing-fast bundling.
+- **Data Fetching**: [TanStack Query](https://tanstack.com/query/latest) (React Query) for caching, background syncing, and automatic polling of document status.
+- **Styling**: Pure CSS (`index.css`) utilizing modern CSS variables and variables for a clean, consistent design system.
+- **Routing**: Component-based conditional rendering (Workspace vs Detail view) optimized for a focused clinician workflow.
+- **Local Storage**: Secure session management holding the JWT access token.
 
-```text
-Paste note -> Submit -> POST /process/text -> Receive extracted results -> Render results table
-```
+---
 
-Description:
-- The user pastes a clinical note.
-- The UI submits trimmed text to the backend.
-- The response is rendered as a condition table with HCC status.
+## 🔄 Core App Flows
 
-### Upload
+### 1. Authentication
+1. User enters API credentials.
+2. Form submits to `POST /auth/login`.
+3. An access token is returned and stored securely in `sessionStorage` or `localStorage`.
+4. Subsequent API calls attach `Authorization: Bearer <token>`.
 
-```text
-Select .txt file -> POST /process/file -> Backend processes file -> Render extracted results
-```
+### 2. Workspace (Document History & Upload)
+- **History list**: Polls `GET /documents` to display all uploaded documents, their respective statuses (pending, processed, failed), and processing metadata.
+- **Upload**: Select a clinical note file (`.txt` or no extension), submit via `POST /documents` (multipart/form-data), which kicks off backend processing on Google Cloud.
 
-Description:
-- The user uploads a plain text clinical note.
-- The UI rejects invalid file types at runtime before sending them.
-- Successful responses reuse the same results view as pasted notes.
+### 3. Extraction Details
+- When a document is clicked, the app opens the Detail View.
+- Repeatedly polls `GET /documents/{documentId}` while the status is "pending".
+- Displays the extracted results table, highlighting which of the extracted ICD-10 codes are **HCC Relevant**.
 
-### History
+---
 
-```text
-Open History tab -> GET /history -> Expand entry -> Review stored processing output
-```
+## 🚀 Local Development
 
-Description:
-- The UI loads previously processed notes.
-- Each row shows note metadata and counts.
-- Expanding a row reveals detailed extraction results.
+### Prerequisites
+- Node.js 20+
+- A running instance of the Medicoder FastAPI backend (usually on `localhost:8000`).
 
-## Local API
+### Setup
 
-Expected environment variables:
-- `VITE_API_URL`: Base URL for the local Medicoder API.
-
-Required endpoints:
-
-### `POST /process/text`
-
-Request:
-
-```json
-{
-  "note": "Assessment and plan text..."
-}
-```
-
-Response:
-
-```json
-{
-  "note_id": "pn_1",
-  "results": [
-    {
-      "condition": "Type 2 Diabetes Mellitus",
-      "code": "E11.9",
-      "hcc_relevant": true
-    }
-  ]
-}
-```
-
-### `POST /process/file`
-
-Request:
-- `multipart/form-data`
-- field: `file`
-
-Response:
-
-```json
-{
-  "note_id": "pn_1",
-  "results": [
-    {
-      "condition": "Hypertension",
-      "code": "I10",
-      "hcc_relevant": false
-    }
-  ]
-}
-```
-
-### `GET /history`
-
-Response:
-
-```json
-[
-  {
-    "note_id": "pn_1",
-    "processed_at": "2026-03-17T10:00:00Z",
-    "result_count": 2,
-    "hcc_count": 1,
-    "results": []
-  }
-]
-```
-
-Notes:
-- `processed_at` should be a valid ISO-8601 timestamp.
-- `results` must match the same condition shape used by the process endpoints.
-
-## Run & Test
-
-Install dependencies:
-
+Install the dependencies:
 ```bash
 npm install
 ```
 
-Start the dev server:
-
+Start the development server:
 ```bash
 npm run dev
 ```
 
-Build for production:
+### Environment Variables
+Vite relies on environment variables for configuration. Create a `.env.local` to point to your local development server if needed:
+```env
+VITE_API_URL=http://localhost:8000
+```
+*(If unset, it defaults to `http://localhost:8000` automatically).*
 
-```bash
-npm run build
+---
+
+## 🚢 Production Deployment
+
+The UI is containerized and optimised for production deployment on **Google Cloud Run**.
+
+### Build Pipeline
+1. **Build Stage (`node:alpine`)**: Installs dependencies and runs `npm run build` to generate the highly optimized raw HTML/JS/CSS assets into the `/dist` folder.
+2. **Serve Stage (`nginx:alpine`)**: Copies the compiled assets and our custom `nginx.conf` into a lightweight web server. The NGINX server routes all missing requests to `index.html` (standard SPA behavior) and has advanced caching headers applied.
+
+### Manual Deployment to Cloud Run 
+
+Ensure you have created a `.env.production` file containing the live API URL:
+```env
+VITE_API_URL=https://medicoder-api-123456.us-central1.run.app
 ```
 
-Mock services:
-- Point `VITE_API_URL` at a local API stub or the backend dev server.
-- Keep the backend running before exercising process and history flows.
+Then submit the build to Google Cloud:
+```bash
+gcloud run deploy medicoder-ui \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+*(Note: A `.gcloudignore` file ensures `.env.production` is bundled in the container).*
 
-## Troubleshooting
+---
 
-- If requests fail in development, verify `VITE_API_URL` and confirm the backend is running.
-- If uploads do not work, confirm the selected file is a `.txt` file and the API accepts `multipart/form-data`.
-- If history shows unknown dates, inspect the backend `processed_at` field for invalid timestamps.
+## 📁 Source Map
 
-## Contributing
-
-- Keep API integration logic in `src/api.ts` and avoid embedding fetch logic in components.
-- Prefer small presentational components with typed props.
-- Update this README when API contracts or local developer workflows change.
+- `src/App.tsx` - Main application logic, React state, React Query hooks, and UI components.
+- `src/api.ts` - Clean, reusable HTTP client layer defining all fetch requests and auth header injection.
+- `src/types.ts` - Strict TypeScript interfaces corresponding to the backend Pydantic schemas.
+- `src/index.css` - Focused stylesheet using modern aesthetic tokens.
+- `Dockerfile` & `nginx.conf` - Multi-stage container production setup.
