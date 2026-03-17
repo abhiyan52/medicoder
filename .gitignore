@@ -11,3 +11,4 @@ output
 *.db
 uploads/
 .codex/*
+.claude/*

@@ -17,10 +17,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """Generates an encoded JWT access token with an expiration timestamp."""
     to_encode = data.copy()
-    if expires_delta:
+    if expires_delta is not None:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
@@ -51,7 +53,6 @@ def verify_token(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
         
     return token_data.username
 
-# For backward compatibility with the existing code structure if needed, 
-# but we will likely swap everything to verify_token
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
-    return verify_token(token)
+# Wrapper dependency for routes that still refer to the older current-user name.
+def get_current_user(username: Annotated[str, Depends(verify_token)]) -> str:
+    return username

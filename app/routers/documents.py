@@ -11,7 +11,7 @@ from app.schemas.documents import (
 from app.services.document_service import DocumentService
 
 
-# All routes on this router require valid HTTP Basic Auth credentials
+# All routes on this router require Bearer-token verification via `verify_token`.
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],

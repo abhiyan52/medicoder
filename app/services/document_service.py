@@ -8,6 +8,7 @@ from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 from google.cloud import firestore
 from google.cloud.exceptions import GoogleCloudError
 
+from app.config import settings
 from app.graph.medicoder_pipeline import run as run_processing_pipeline
 from app.schemas.documents import DocumentStatus, DocumentUploadRequest
 from app.utils.storage import StorageBackend
@@ -54,7 +55,7 @@ def _normalize_processed_results(results: list[dict[str, Any]]) -> list[dict[str
 
 def process_document_background(document_id: str) -> None:
     """Heavy background processing task using Firestore."""
-    db = firestore.Client()
+    db = firestore.Client(project=settings.PROJECT_ID)
     doc_ref = db.collection("documents").document(document_id)
     doc = doc_ref.get()
 
@@ -107,7 +108,7 @@ class DocumentService:
 
     def __init__(self) -> None:
         # Initialize Firestore client. It automatically picks up GCP credentials.
-        self.db = firestore.Client()
+        self.db = firestore.Client(project=settings.PROJECT_ID)
         self.collection = self.db.collection("documents")
 
     def upload_document(
