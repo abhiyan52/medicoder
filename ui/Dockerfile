@@ -23,6 +23,15 @@ COPY nginx.conf /etc/nginx/conf.d/
 # Copy built assets
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Hand ownership of served files and config to the nginx user,
+# and ensure the PID file can be written without root.
+RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown nginx:nginx /var/run/nginx.pid
+
+# Run as non-root
+USER nginx
+
 # Expose port (Cloud Run uses 8080 by default)
 EXPOSE 8080
 

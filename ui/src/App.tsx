@@ -162,7 +162,8 @@ function AuthenticatedApp({
     const selected = event.target.files?.[0] ?? null;
     setFileError(null);
     if (selected) {
-      if (selected.type !== "text/plain") {
+      const isPlainText = selected.type === "text/plain" || /\.txt$/i.test(selected.name);
+      if (!isPlainText) {
         setFileError("Only plain text files (.txt) are supported.");
         setFile(null);
         return;

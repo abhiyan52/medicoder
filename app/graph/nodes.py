@@ -37,7 +37,7 @@ def input_handler_node(state: MedicoderState) -> Dict:
     Passes extracted document text through to the pipeline.
     """
     clinical_note = state["raw_input"]
-    if not clinical_note:
+    if not clinical_note or not clinical_note.strip():
         raise ValueError("No text content provided")
     logger.info("Input received from uploaded document")
     return {"clinical_note": clinical_note}

@@ -26,22 +26,23 @@ def get_document_service() -> DocumentService:
 DocumentServiceDep = Annotated[DocumentService, Depends(get_document_service)]
 
 
+MAX_FILE_SIZE = 10 * 1024  # 10 KB
+
+
 @router.post(
     "",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload a document",
 )
-MAX_FILE_SIZE = 10 * 1024  # 10 KB
-
-
 def upload_document(
     payload: Annotated[DocumentUploadRequest, Depends(DocumentUploadRequest.as_form)],
     file: Annotated[UploadFile, File(...)],
     service: DocumentServiceDep,
     background_tasks: BackgroundTasks,
 ) -> DocumentUploadResponse:
-    if file.content_type not in ("text/plain", "text/plain; charset=utf-8"):
+    media_type = (file.content_type or "").lower().split(";")[0].strip()
+    if not media_type.startswith("text/plain"):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Only plain text files (.txt) are supported.",
