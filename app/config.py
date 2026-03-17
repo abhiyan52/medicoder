@@ -53,6 +53,18 @@ class AppConfig(BaseModel):
         default_factory=lambda: os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
     )
 
+    # API server settings
+    API_HOST: str = Field(default_factory=lambda: os.getenv("API_HOST", "0.0.0.0"))
+    API_PORT: int = Field(default_factory=lambda: int(os.getenv("API_PORT", "8000")))
+    CORS_ORIGINS: str = Field(
+        default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    )
+
+    # Storage
+    OUTPUT_DIR: str = Field(
+        default_factory=lambda: os.getenv("OUTPUT_DIR", "output")
+    )
+
 
 # Singleton instance
 settings = AppConfig()
