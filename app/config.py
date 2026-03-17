@@ -43,6 +43,18 @@ def get_project_id_from_creds() -> str:
     return "medicoder-project"
 
 
+def get_api_port() -> int:
+    raw = os.getenv("API_PORT")
+    if raw is None or raw == "":
+        return 8000
+
+    try:
+        return int(raw)
+    except ValueError:
+        logger.warning("Invalid API_PORT value; falling back to default", raw_value=raw)
+        return 8000
+
+
 class AppConfig(BaseModel):
     # Essential Google Cloud Settings
     GOOGLE_APPLICATION_CREDENTIALS: str | None = Field(
@@ -54,8 +66,8 @@ class AppConfig(BaseModel):
     )
 
     # API server settings
-    API_HOST: str = Field(default_factory=lambda: os.getenv("API_HOST", "0.0.0.0"))
-    API_PORT: int = Field(default_factory=lambda: int(os.getenv("API_PORT", "8000")))
+    API_HOST: str = Field(default_factory=lambda: os.getenv("API_HOST", "127.0.0.1"))
+    API_PORT: int = Field(default_factory=get_api_port)
     CORS_ORIGINS: str = Field(
         default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:5173")
     )
